@@ -20,7 +20,7 @@ import {
 } from "../lib/icons";
 import { cn } from "../lib/cn";
 
-export type SortMode = "default" | "alphabetical" | "friends";
+export type SortMode = "default" | "alphabetical" | "credits" | "friends";
 
 type Props = {
   periods: Set<Period>;
@@ -248,6 +248,7 @@ export function Sidebar({
                       : []),
                     ["default", "Programme order"],
                     ["alphabetical", "Alphabetical"],
+                    ["credits", "Credits"],
                   ] as const
                 ).map(([value, label]) => (
                   <label
