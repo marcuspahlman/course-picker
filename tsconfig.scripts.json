@@ -1,0 +1,15 @@
+{
+  "compilerOptions": {
+    "target": "ES2023",
+    "lib": ["ES2023"],
+    "module": "CommonJS",
+    "moduleResolution": "Node",
+    "ignoreDeprecations": "6.0",
+    "types": ["node"],
+    "skipLibCheck": true,
+    "strict": true,
+    "outDir": "node_modules/.tmp/scripts",
+    "rootDir": "."
+  },
+  "include": ["scripts/**/*.ts"]
+}

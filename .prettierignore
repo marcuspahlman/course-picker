@@ -1,0 +1,5 @@
+.agents
+dist
+node_modules
+convex/_generated
+node_modules/.tmp

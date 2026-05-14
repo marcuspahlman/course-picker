@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/course-picker.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="application-name" content="Course Picker" />
+    <meta name="description" content="Choose KTH courses with your friends." />
+    <meta property="og:title" content="Course Picker" />
+    <meta property="og:site_name" content="Course Picker" />
+    <meta
+      property="og:description"
+      content="Choose KTH courses with your friends."
+    />
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="Course Picker" />
+    <meta
+      name="twitter:description"
+      content="Choose KTH courses with your friends."
+    />
+    <title>Course Picker</title>
+    <script>
+      // Set initial theme before paint to avoid FOUC.
+      (function () {
+        try {
+          var stored = localStorage.getItem("course-picker-theme");
+          var prefersDark = window.matchMedia(
+            "(prefers-color-scheme: dark)",
+          ).matches;
+          var effective =
+            stored === "dark" || stored === "light"
+              ? stored
+              : prefersDark
+                ? "dark"
+                : "light";
+          var root = document.documentElement;
+          if (effective === "dark") root.classList.add("dark");
+          else root.classList.add("light");
+        } catch {}
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
