@@ -28,6 +28,7 @@ import { useAuthContext } from "../lib/authContextValue";
 import type { SortMode } from "../components/Sidebar";
 import type { Doc } from "../../convex/_generated/dataModel";
 import {
+  coursePlanningStatusScore,
   friendActivityByCourseId,
   friendPlanningScore,
   type FriendsCourseActivityPayload,
@@ -230,14 +231,16 @@ export function BrowsePage({
 
     if (sort === "friends" && auth.isAuthenticated) {
       const rankedCourses = [...matching].sort((a, b) => {
-        const scoreA = friendPlanningScore(
-          friendByCourseId.get(a._id as string),
-          summaryByCourseId.get(a._id as string)?.reflectionCount ?? 0,
-        );
-        const scoreB = friendPlanningScore(
-          friendByCourseId.get(b._id as string),
-          summaryByCourseId.get(b._id as string)?.reflectionCount ?? 0,
-        );
+        const scoreA =
+          friendPlanningScore(
+            friendByCourseId.get(a._id as string),
+            summaryByCourseId.get(a._id as string)?.reflectionCount ?? 0,
+          ) + coursePlanningStatusScore(statusMap.get(a._id as string));
+        const scoreB =
+          friendPlanningScore(
+            friendByCourseId.get(b._id as string),
+            summaryByCourseId.get(b._id as string)?.reflectionCount ?? 0,
+          ) + coursePlanningStatusScore(statusMap.get(b._id as string));
         if (scoreB !== scoreA) return scoreB - scoreA;
         return displayCourseCode(a).localeCompare(displayCourseCode(b));
       });

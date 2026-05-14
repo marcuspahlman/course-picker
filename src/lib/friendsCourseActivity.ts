@@ -26,14 +26,25 @@ export type FriendsOnCourse = {
   taken: FriendCourseProfileChip[];
 };
 
+export type CoursePlanningStatus = "saved" | "taking" | "taken";
+
+export function coursePlanningStatusScore(
+  status: CoursePlanningStatus | null | undefined,
+) {
+  if (status === "taking") return 2;
+  if (status === "saved") return 1.2;
+  if (status === "taken") return 1;
+  return 0;
+}
+
 export function friendPlanningScore(
   activity: FriendsOnCourse | undefined,
   reflectionCount = 0,
 ) {
   return (
-    (activity?.saved.length ?? 0) * 1.2 +
-    (activity?.taken.length ?? 0) +
-    (activity?.taking.length ?? 0) * 2 +
+    (activity?.saved.length ?? 0) * coursePlanningStatusScore("saved") +
+    (activity?.taken.length ?? 0) * coursePlanningStatusScore("taken") +
+    (activity?.taking.length ?? 0) * coursePlanningStatusScore("taking") +
     reflectionCount * 0.2
   );
 }
