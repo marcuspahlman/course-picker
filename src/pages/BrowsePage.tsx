@@ -17,6 +17,7 @@ import {
   formatPeriods,
   mandatoryStudyYearForPeriods,
   offeringsInPeriods,
+  totalCredits,
 } from "../lib/course";
 import { CourseCard } from "../components/CourseCard";
 import { ProgrammePicker } from "../components/ProgrammePicker";
@@ -254,6 +255,13 @@ export function BrowsePage({
       if (sort === "alphabetical") {
         list.sort(
           (a, b) =>
+            a.courseTitle.localeCompare(b.courseTitle) ||
+            displayCourseCode(a).localeCompare(displayCourseCode(b)),
+        );
+      } else if (sort === "credits") {
+        list.sort(
+          (a, b) =>
+            totalCredits(b) - totalCredits(a) ||
             a.courseTitle.localeCompare(b.courseTitle) ||
             displayCourseCode(a).localeCompare(displayCourseCode(b)),
         );
