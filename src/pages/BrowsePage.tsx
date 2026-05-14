@@ -359,20 +359,8 @@ export function BrowsePage({
         />
       )}
 
-      {grouped && grouped.rankedCourses && (
+      {grouped && grouped.total > 0 && grouped.rankedCourses && (
         <section className="mt-10 first:mt-2">
-          <div className="mb-4 flex items-center gap-3 border-b border-stone-200 pb-3 dark:border-stone-800">
-            <h2 className="text-[15px] font-semibold tracking-tight text-stone-900 dark:text-stone-100">
-              Popularity
-            </h2>
-            <span className="font-mono text-[10.5px] uppercase tracking-widest text-stone-400 dark:text-stone-500">
-              {isOtherLibrary ? "Other" : grouped.periodLabel}
-            </span>
-            <span className="ml-auto font-mono text-[11px] text-stone-400 dark:text-stone-500">
-              {grouped.rankedCourses.length} course
-              {grouped.rankedCourses.length === 1 ? "" : "s"}
-            </span>
-          </div>
           <div className="stagger flex flex-col gap-3">
             {grouped.rankedCourses.map((c) => {
               const summary = summaryByCourseId.get(c._id as string);
@@ -396,6 +384,7 @@ export function BrowsePage({
       )}
 
       {grouped &&
+        grouped.total > 0 &&
         !grouped.rankedCourses &&
         ALL_CATEGORIES.map((cat) => {
           const list = grouped.groups.get(cat) ?? [];
