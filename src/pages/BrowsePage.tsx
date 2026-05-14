@@ -304,6 +304,22 @@ export function BrowsePage({
     isOtherLibrary,
   ]);
 
+  const openAddCourseDialog = () =>
+    auth.requireAuth(() => setAddOpen(true), {
+      reason: "Sign in to add a course to the community library.",
+    });
+  const addCourseButton = (
+    <button
+      type="button"
+      onClick={openAddCourseDialog}
+      className="inline-flex h-12 shrink-0 items-center justify-center gap-2 rounded-lg bg-stone-900 px-4 text-[13.5px] font-medium text-stone-50 transition-colors hover:bg-stone-800 dark:bg-stone-100 dark:text-stone-900 dark:hover:bg-white"
+    >
+      <PlusIcon size={14} />
+      Add course
+    </button>
+  );
+  const hasSearchQuery = search.trim().length > 0;
+
   return (
     <div>
       <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center">
@@ -328,51 +344,21 @@ export function BrowsePage({
             className="h-12 w-full rounded-lg border border-stone-200 bg-white pl-9 pr-3 text-[14px] text-stone-900 outline-none transition-colors placeholder:text-stone-400 focus:border-stone-400 focus:ring-2 focus:ring-stone-200 dark:border-stone-800 dark:bg-stone-900 dark:text-stone-100 dark:placeholder:text-stone-500 dark:focus:border-stone-600 dark:focus:ring-stone-800"
           />
         </div>
-        {isOtherLibrary && (
-          <button
-            type="button"
-            onClick={() =>
-              auth.requireAuth(() => setAddOpen(true), {
-                reason: "Sign in to add a course to the community library.",
-              })
-            }
-            className="inline-flex h-12 shrink-0 items-center justify-center gap-2 rounded-lg bg-stone-900 px-4 text-[13.5px] font-medium text-stone-50 transition-colors hover:bg-stone-800 dark:bg-stone-100 dark:text-stone-900 dark:hover:bg-white"
-          >
-            <PlusIcon size={14} />
-            Add course
-          </button>
-        )}
+        {isOtherLibrary && addCourseButton}
       </div>
 
       {!grouped && <CourseListSkeleton rows={6} />}
 
-      {grouped && grouped.total === 0 && (
+      {grouped && hasSearchQuery && grouped.total === 0 && (
         <EmptyState
           title="No courses match these filters"
-          body={
-            search.trim()
-              ? "Try clearing the search or adjusting the filters."
-              : isOtherLibrary
-                ? "No community-added courses have been added yet."
-                : "Adjust the show, year, or period filters in the sidebar to see more."
-          }
+          body="Try clearing your search or adjusting the filters. You can also add a course."
+          action={isOtherLibrary ? null : addCourseButton}
         />
       )}
 
-      {grouped && grouped.rankedCourses && (
+      {grouped && grouped.total > 0 && grouped.rankedCourses && (
         <section className="mt-10 first:mt-2">
-          <div className="mb-4 flex items-center gap-3 border-b border-stone-200 pb-3 dark:border-stone-800">
-            <h2 className="text-[15px] font-semibold tracking-tight text-stone-900 dark:text-stone-100">
-              Popularity
-            </h2>
-            <span className="font-mono text-[10.5px] uppercase tracking-widest text-stone-400 dark:text-stone-500">
-              {isOtherLibrary ? "Other" : grouped.periodLabel}
-            </span>
-            <span className="ml-auto font-mono text-[11px] text-stone-400 dark:text-stone-500">
-              {grouped.rankedCourses.length} course
-              {grouped.rankedCourses.length === 1 ? "" : "s"}
-            </span>
-          </div>
           <div className="stagger flex flex-col gap-3">
             {grouped.rankedCourses.map((c) => {
               const summary = summaryByCourseId.get(c._id as string);
@@ -396,6 +382,7 @@ export function BrowsePage({
       )}
 
       {grouped &&
+        grouped.total > 0 &&
         !grouped.rankedCourses &&
         ALL_CATEGORIES.map((cat) => {
           const list = grouped.groups.get(cat) ?? [];
