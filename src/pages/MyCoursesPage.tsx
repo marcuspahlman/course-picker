@@ -40,6 +40,7 @@ type PeriodCreditRow = {
   courses: Array<{
     id: string;
     code: string;
+    title: string;
     color: CourseColor;
     credits: number;
   }>;
@@ -347,7 +348,8 @@ function PeriodCreditsTable({
                         type="button"
                         onClick={() => onSelectCourse(course.id)}
                         aria-label={`Show ${course.code} card`}
-                        className="inline-flex rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stone-400"
+                        title={course.title}
+                        className="inline-flex cursor-pointer rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stone-400"
                       >
                         <MonoChip
                           className={cn(
@@ -381,6 +383,7 @@ function periodCreditRows(courses: VisibleCourseRow[]): PeriodCreditRow[] {
       .map(({ course, color, id }) => ({
         id,
         code: displayCourseCode(course),
+        title: course.courseTitle,
         color,
         credits: creditsForPeriod(course, period),
       }))
