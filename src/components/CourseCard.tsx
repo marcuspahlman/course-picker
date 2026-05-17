@@ -1,3 +1,4 @@
+import { forwardRef } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   type Course,
@@ -18,6 +19,7 @@ import { MonoChip } from "./Primitives";
 import { FriendCoursePeopleRows } from "./FriendCoursePeopleRows";
 import type { FriendsOnCourse } from "../lib/friendsCourseActivity";
 import { ChatBubbleIcon } from "../lib/icons";
+import { cn } from "../lib/cn";
 
 type Props = {
   course: Course;
@@ -29,19 +31,28 @@ type Props = {
   status: "saved" | "taking" | "taken" | null;
   friendsOnCourse?: FriendsOnCourse | null;
   commentCount?: number;
+  courseChipClassName?: string;
+  highlightClassName?: string;
+  highlighted?: boolean;
 };
 
-export function CourseCard({
-  course,
-  programmeCode,
-  showProgrammeContext = true,
-  periods: periodFilter,
-  summaryPreview,
-  hasSummary,
-  status,
-  friendsOnCourse,
-  commentCount = 0,
-}: Props) {
+export const CourseCard = forwardRef<HTMLElement, Props>(function CourseCard(
+  {
+    course,
+    programmeCode,
+    showProgrammeContext = true,
+    periods: periodFilter,
+    summaryPreview,
+    hasSummary,
+    status,
+    friendsOnCourse,
+    commentCount = 0,
+    courseChipClassName,
+    highlightClassName,
+    highlighted = false,
+  },
+  ref,
+) {
   const navigate = useNavigate();
   const category = periodFilter
     ? dominantCategoryForPeriods(course, periodFilter)
@@ -59,6 +70,7 @@ export function CourseCard({
 
   return (
     <article
+      ref={ref}
       role="link"
       tabIndex={0}
       onClick={() => navigate(href)}
@@ -68,12 +80,23 @@ export function CourseCard({
           navigate(href);
         }
       }}
-      className="group cursor-pointer rounded-xl border border-stone-200 bg-white p-6 transition-all duration-200 hover:border-stone-300 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stone-400 dark:border-stone-800 dark:bg-stone-900 dark:hover:border-stone-700"
+      className={cn(
+        "group cursor-pointer rounded-xl border bg-white p-6 transition-all duration-1000 hover:border-stone-300 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stone-400 dark:bg-stone-900 dark:hover:border-stone-700",
+        highlighted
+          ? cn(
+              "shadow-md ring-2",
+              highlightClassName ??
+                "border-stone-900 !bg-stone-50 ring-stone-300 dark:border-stone-100 dark:!bg-stone-800/70 dark:ring-stone-700",
+            )
+          : "border-stone-200 dark:border-stone-800",
+      )}
     >
       <div className="flex flex-col gap-4 lg:flex-row lg:items-stretch lg:gap-6">
         <div className="min-w-0 flex-1">
           <div className="mb-3 flex flex-wrap items-center gap-2">
-            <MonoChip>{visibleCourseCode}</MonoChip>
+            <MonoChip className={cn(courseChipClassName)}>
+              {visibleCourseCode}
+            </MonoChip>
             {isCommunity && !external && (
               <span className="rounded-full bg-stone-100 px-2 py-0.5 font-mono text-[10.5px] uppercase tracking-wider text-stone-600 dark:bg-stone-800 dark:text-stone-300">
                 Community added
@@ -163,7 +186,7 @@ export function CourseCard({
       </div>
     </article>
   );
-}
+});
 
 function CommentCountChip({ count }: { count: number }) {
   return (

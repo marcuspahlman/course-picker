@@ -207,16 +207,30 @@ export function mandatoryStudyYearLabel(
 
 export function creditsForPeriod(course: Course, period: Period): number {
   const offerings = offeringsInPeriod(course, period);
-  if (offerings.length === 0) return 0;
-  return offerings.reduce((total, offering) => {
-    const periodCredits = offering.periodCredits[period];
-    return total + (periodCredits ?? 0);
-  }, 0);
+  if (offerings.length === 0) {
+    const coursePeriods = ALL_PERIODS.filter((p) =>
+      periodsFromText(course.period).has(p),
+    );
+
+    if (
+      course.credits === undefined ||
+      coursePeriods.length === 0 ||
+      !coursePeriods.includes(period)
+    ) {
+      return 0;
+    }
+
+    return course.credits / coursePeriods.length;
+  }
+
+  return Math.max(
+    ...offerings.map((offering) => offering.periodCredits[period] ?? 0),
+  );
 }
 
 export function totalCredits(course: Course): number {
   const offerings = course.offerings;
-  if (offerings.length === 0) return 0;
+  if (offerings.length === 0) return course.credits ?? 0;
   return Math.max(...offerings.map((o) => o.credits));
 }
 
