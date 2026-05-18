@@ -102,7 +102,7 @@ export function Sidebar({
               Course Picker
             </span>
             <span className="mt-1 font-mono text-[10px] uppercase tracking-widest text-stone-400 dark:text-stone-500">
-              Pick courses in context
+              Find and pick courses
             </span>
           </Link>
           {onClose && (
