@@ -166,7 +166,16 @@ function ShellRoutes() {
           }
         />
         <Route path="/course/:courseCode" element={<CourseDetailPage />} />
-        <Route path="/me" element={<MyCoursesPage />} />
+        <Route
+          path="/me"
+          element={
+            <MyCoursesPage
+              defaultProgrammeCode={
+                auth.profile?.defaultProgrammeCode ?? FALLBACK_PROGRAMME_CODE
+              }
+            />
+          }
+        />
         <Route path="/groups" element={<GroupsListPage />} />
         <Route path="/group/:groupId" element={<GroupPage />} />
         <Route path="*" element={<NotFound />} />

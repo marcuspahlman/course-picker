@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { Fragment, useMemo, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
@@ -104,7 +104,16 @@ export function CourseDetailPage() {
           programmeCourse: data.programmeCourse,
         }
       : null;
-  const displayContext = selectedContext;
+  const defaultContext =
+    programmeCode === undefined && auth.profile?.defaultProgrammeCode
+      ? data.programmeContexts.find(
+          (context) =>
+            context.programme.programmeCode ===
+            auth.profile?.defaultProgrammeCode,
+        )
+      : undefined;
+  const displayContext = selectedContext ?? defaultContext ?? null;
+  const displayProgramme = displayContext?.programme ?? null;
   const courseForDisplay = courseWithContext(
     course,
     displayContext,
@@ -114,12 +123,7 @@ export function CourseDetailPage() {
   const community = isCommunityCourse(course);
   const external = isExternalCourse(course);
   const periodLabel =
-    formatCoursePeriods(courseForDisplay) ||
-    (course.period
-      ? course.period
-      : data.programmeContexts.length > 0
-        ? "Programme-specific"
-        : "Not listed");
+    formatCoursePeriods(courseForDisplay) || course.period || "Not listed";
   const status =
     (statuses ?? []).find((p) => p.status.courseId === course._id)?.status
       .status ?? null;
@@ -130,7 +134,7 @@ export function CourseDetailPage() {
       <DetailHeader
         course={courseForDisplay}
         status={status}
-        programme={selectedContext?.programme ?? null}
+        programme={displayProgramme}
         onEdit={
           community
             ? () =>
@@ -171,11 +175,8 @@ export function CourseDetailPage() {
               {course.institution && (
                 <Row k="Institution" v={course.institution} />
               )}
-              {selectedContext ? (
-                <Row
-                  k="Programme"
-                  v={selectedContext.programme.programmeCode}
-                />
+              {displayProgramme ? (
+                <Row k="Programme" v={displayProgramme.programmeCode} />
               ) : (
                 <Row
                   k="Programmes"
@@ -314,11 +315,28 @@ function courseWithContext(
   context: CourseProgrammeContext | null,
   programmeContexts: CourseProgrammeContext[],
 ): Course {
+  const fallbackCredits = Math.max(
+    0,
+    ...programmeContexts.flatMap((c) =>
+      c.programmeCourse.offerings.map((offering) => offering.credits),
+    ),
+  );
+
+  if (context === null) {
+    return {
+      ...course,
+      credits:
+        course.credits ?? (fallbackCredits > 0 ? fallbackCredits : undefined),
+      offerings: [],
+      programmeContexts,
+    };
+  }
+
   return {
     ...course,
-    offerings: context?.programmeCourse.offerings ?? [],
-    programmeNotes: context?.programmeCourse.programmeNotes,
-    requirementGroup: context?.programmeCourse.requirementGroup,
+    offerings: context.programmeCourse.offerings,
+    programmeNotes: context.programmeCourse.programmeNotes,
+    requirementGroup: context.programmeCourse.requirementGroup,
     programmeContexts,
   };
 }
@@ -567,6 +585,17 @@ function DetailHeader({
   const primary = course.offerings[0];
   const mandatoryYear = mandatoryStudyYearLabel(course);
   const periodLabels = coursePeriodLabels(course);
+  const creditLabel = displayCredits(course);
+  const metadataItems = [
+    creditLabel,
+    periodLabels.length > 0
+      ? periodLabels.join(" or ")
+      : course.period
+        ? course.period
+        : null,
+    course.institution,
+    programme?.programmeName,
+  ].filter((item): item is string => Boolean(item));
   const visibleCourseCode = displayCourseCode(course);
   const community = isCommunityCourse(course);
   const external = isExternalCourse(course);
@@ -603,32 +632,13 @@ function DetailHeader({
             {course.courseTitle}
           </h1>
           <div className="mt-3 flex flex-wrap items-center gap-x-2.5 gap-y-1.5 text-[13.5px] text-stone-500 dark:text-stone-400">
-            <span>{displayCredits(course)}</span>
-            {periodLabels.length > 0 && (
-              <>
-                <Dot />
-                <span>{periodLabels.join(" or ")}</span>
-              </>
-            )}
-            {periodLabels.length === 0 && course.period && (
-              <>
-                <Dot />
-                <span>{course.period}</span>
-              </>
-            )}
-            {course.institution && (
-              <>
-                <Dot />
-                <span>{course.institution}</span>
-              </>
-            )}
-            {programme && (
-              <>
-                <Dot />
-                <span>{programme.programmeName}</span>
-              </>
-            )}
-            <Dot />
+            {metadataItems.map((item, index) => (
+              <Fragment key={`${item}-${index}`}>
+                {index > 0 && <Dot />}
+                <span>{item}</span>
+              </Fragment>
+            ))}
+            {metadataItems.length > 0 && <Dot />}
             {course.officialKthUrl ? (
               <a
                 href={course.officialKthUrl}

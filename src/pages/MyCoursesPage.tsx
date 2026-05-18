@@ -14,6 +14,7 @@ import {
   formatCredits,
   totalCredits,
   type Course,
+  type CourseProgrammeContext,
 } from "../lib/course";
 import { cn } from "../lib/cn";
 import { COURSE_COLOR_PALETTE, type CourseColor } from "../lib/courseColors";
@@ -34,6 +35,11 @@ type VisibleCourseRow = {
   course: Course;
   id: string;
   color: CourseColor;
+  programmeCode?: string | null;
+};
+type CourseStatusCourse = {
+  course: Course;
+  programmeCode?: string | null;
 };
 type PeriodCreditRow = {
   period: (typeof ALL_PERIODS)[number];
@@ -46,7 +52,11 @@ type PeriodCreditRow = {
   }>;
 };
 
-export function MyCoursesPage() {
+export function MyCoursesPage({
+  defaultProgrammeCode,
+}: {
+  defaultProgrammeCode: string | null;
+}) {
   const auth = useAuthContext();
   const [tab, setTab] = useState<Tab>("taking");
   const [highlightedCourseId, setHighlightedCourseId] = useState<string | null>(
@@ -149,21 +159,28 @@ export function MyCoursesPage() {
     taken: taken.length,
   };
 
-  let visibleCourses: Course[] = [];
+  let visibleCourses: CourseStatusCourse[] = [];
   if (tab === "taking") {
-    visibleCourses = taking.map(courseFromStatus).filter(isCourse);
+    visibleCourses = taking
+      .map((item) => courseFromStatus(item, defaultProgrammeCode))
+      .filter(isStatusCourse);
   }
   if (tab === "saved") {
-    visibleCourses = saved.map(courseFromStatus).filter(isCourse);
+    visibleCourses = saved
+      .map((item) => courseFromStatus(item, defaultProgrammeCode))
+      .filter(isStatusCourse);
   }
   if (tab === "taken") {
-    visibleCourses = taken.map(courseFromStatus).filter(isCourse);
+    visibleCourses = taken
+      .map((item) => courseFromStatus(item, defaultProgrammeCode))
+      .filter(isStatusCourse);
   }
 
-  const visibleCourseRows = visibleCourses.map((course, index) => ({
-    course,
-    id: course._id as string,
+  const visibleCourseRows = visibleCourses.map((item, index) => ({
+    course: item.course,
+    id: item.course._id as string,
     color: COURSE_COLOR_PALETTE[index % COURSE_COLOR_PALETTE.length],
+    programmeCode: item.programmeCode,
   }));
   const visibleCreditTotals = periodCreditRows(visibleCourseRows);
   const visibleTotalCredits = totalCreditsForRows(visibleCourseRows);
@@ -254,7 +271,7 @@ export function MyCoursesPage() {
               onSelectCourse={focusCourseCard}
             />
           )}
-          {visibleCourseRows.map(({ course, color, id }) => (
+          {visibleCourseRows.map(({ course, color, id, programmeCode }) => (
             <CourseCard
               key={id}
               ref={(node) => {
@@ -265,6 +282,7 @@ export function MyCoursesPage() {
                 }
               }}
               course={course}
+              programmeCode={programmeCode}
               courseChipClassName={
                 tab === "taking" || tab === "saved"
                   ? color.chipClassName
@@ -395,30 +413,66 @@ function totalCreditsForRows(courses: VisibleCourseRow[]): number {
   return courses.reduce((total, { course }) => total + totalCredits(course), 0);
 }
 
-function isCourse(course: Course | null): course is Course {
+function isStatusCourse(
+  course: CourseStatusCourse | null,
+): course is CourseStatusCourse {
   return course !== null;
 }
 
-function courseFromStatus(item: {
-  course: Doc<"courses"> | null;
-  programmeContexts?: Course["programmeContexts"];
-}): Course | null {
-  const context = item.programmeContexts?.[0];
+function courseFromStatus(
+  item: {
+    course: Doc<"courses"> | null;
+    programmeContexts?: Course["programmeContexts"];
+  },
+  defaultProgrammeCode: string | null,
+): CourseStatusCourse | null {
   if (item.course === null) {
     return null;
   }
-  if (context === undefined) {
+  const contexts = item.programmeContexts ?? [];
+  const defaultContext =
+    defaultProgrammeCode === null
+      ? undefined
+      : contexts.find(
+          (context) => context.programme.programmeCode === defaultProgrammeCode,
+        );
+
+  if (defaultContext !== undefined) {
     return {
-      ...item.course,
-      offerings: [],
-      programmeContexts: item.programmeContexts ?? [],
+      course: courseFromProgrammeContext(item.course, defaultContext),
+      programmeCode: defaultContext.programme.programmeCode,
     };
   }
+
+  const fallbackCredits = Math.max(
+    0,
+    ...contexts.flatMap((context) =>
+      context.programmeCourse.offerings.map((offering) => offering.credits),
+    ),
+  );
+
   return {
-    ...item.course,
+    course: {
+      ...item.course,
+      credits:
+        item.course.credits ??
+        (fallbackCredits > 0 ? fallbackCredits : undefined),
+      offerings: [],
+      programmeContexts: [],
+    },
+    programmeCode: null,
+  };
+}
+
+function courseFromProgrammeContext(
+  course: Doc<"courses">,
+  context: CourseProgrammeContext,
+): Course {
+  return {
+    ...course,
     offerings: context.programmeCourse.offerings,
     programmeNotes: context.programmeCourse.programmeNotes,
     requirementGroup: context.programmeCourse.requirementGroup,
-    programmeContexts: item.programmeContexts,
+    programmeContexts: [context],
   };
 }

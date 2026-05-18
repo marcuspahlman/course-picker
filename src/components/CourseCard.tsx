@@ -1,4 +1,4 @@
-import { forwardRef } from "react";
+import { Fragment, forwardRef } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   type Course,
@@ -59,6 +59,7 @@ export const CourseCard = forwardRef<HTMLElement, Props>(function CourseCard(
     : null;
   const mandatoryYear = mandatoryStudyYearLabel(course, periodFilter);
   const periodLabels = coursePeriodLabels(course, periodFilter);
+  const creditLabel = displayCredits(course);
   const isCommunity = isCommunityCourse(course);
   const external = isExternalCourse(course);
   const visibleCourseCode = displayCourseCode(course);
@@ -66,6 +67,20 @@ export const CourseCard = forwardRef<HTMLElement, Props>(function CourseCard(
     course.programmeContexts?.map(
       (context) => context.programme.programmeCode,
     ) ?? [];
+  const metadataItems = [
+    creditLabel,
+    periodLabels.length > 0
+      ? periodLabels.join(" or ")
+      : course.period
+        ? course.period
+        : null,
+    course.institution,
+    showProgrammeContext && programmeCodes.length > 0
+      ? programmeCodes.length === 1
+        ? programmeCodes[0]
+        : `Programmes ${programmeCodes.join(", ")}`
+      : null,
+  ].filter((item): item is string => Boolean(item));
   const href = courseRoute(course, programmeCode);
 
   return (
@@ -120,38 +135,17 @@ export const CourseCard = forwardRef<HTMLElement, Props>(function CourseCard(
             {course.courseTitle}
           </h3>
           <div className="mt-2 flex flex-wrap items-center gap-x-2.5 gap-y-1.5 text-[13px] text-stone-500 dark:text-stone-400">
-            <span>{displayCredits(course)}</span>
-            {periodLabels.length > 0 && (
-              <>
-                <span className="text-current">•</span>
-                <span>{periodLabels.join(" or ")}</span>
-              </>
-            )}
-            {periodLabels.length === 0 && course.period && (
-              <>
-                <span className="text-current">•</span>
-                <span>{course.period}</span>
-              </>
-            )}
-            {course.institution && (
-              <>
-                <span className="text-current">•</span>
-                <span>{course.institution}</span>
-              </>
-            )}
-            {showProgrammeContext && programmeCodes.length > 0 && (
-              <>
-                <span className="text-current">•</span>
-                <span>
-                  {programmeCodes.length === 1
-                    ? programmeCodes[0]
-                    : `Programmes ${programmeCodes.join(", ")}`}
-                </span>
-              </>
-            )}
+            {metadataItems.map((item, index) => (
+              <Fragment key={`${item}-${index}`}>
+                {index > 0 && <span className="text-current">•</span>}
+                <span>{item}</span>
+              </Fragment>
+            ))}
             {!hasSummary && (
               <>
-                <span className="text-current">•</span>
+                {metadataItems.length > 0 && (
+                  <span className="text-current">•</span>
+                )}
                 <span className="text-stone-400 dark:text-stone-500">
                   No student summary yet
                 </span>
