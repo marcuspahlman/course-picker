@@ -4,6 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { api } from "../../convex/_generated/api";
 import {
   ALL_CATEGORIES,
+  ALL_LIBRARY_CODE,
   ALL_PERIODS,
   ALL_STUDY_YEARS,
   CATEGORY_LABEL,
@@ -113,6 +114,7 @@ export function BrowsePage({
   sort,
 }: Props) {
   const isOtherLibrary = programmeCode === OTHER_LIBRARY_CODE;
+  const isAllLibrary = programmeCode === ALL_LIBRARY_CODE;
   const catalogue = useQuery(api.courseData.listProgrammeCourses, {
     programmeCode,
   });
@@ -121,7 +123,11 @@ export function BrowsePage({
     if (catalogue === null) return [];
     return catalogue.courses.map((row) => ({
       ...row.course,
-      offerings: row.programmeCourse?.offerings ?? [],
+      offerings:
+        row.programmeCourse?.offerings ??
+        row.programmeContexts.flatMap(
+          (context) => context.programmeCourse.offerings,
+        ),
       programmeNotes: row.programmeCourse?.programmeNotes,
       requirementGroup: row.programmeCourse?.requirementGroup,
       programmeContexts: row.programmeContexts,
@@ -192,7 +198,11 @@ export function BrowsePage({
 
     const inPeriod = isOtherLibrary
       ? courses
-      : courses.filter((c) => offeringsInPeriods(c, activePeriods).length > 0);
+      : courses.filter(
+          (c) =>
+            c.offerings.length === 0 ||
+            offeringsInPeriods(c, activePeriods).length > 0,
+        );
 
     const matchingSearch = query
       ? inPeriod.filter(
@@ -207,6 +217,9 @@ export function BrowsePage({
     const matching = matchingSearch
       .filter((c) => {
         if (isOtherLibrary) return true;
+        if (isAllLibrary && c.offerings.length === 0) {
+          return activeCategories.has("recommended");
+        }
 
         const cat = dominantCategoryForPeriods(c, activePeriods);
         if (cat === null || !activeCategories.has(cat)) return false;
@@ -223,9 +236,10 @@ export function BrowsePage({
     for (const cat of ALL_CATEGORIES) groups.set(cat, []);
 
     for (const course of matching) {
-      const cat = isOtherLibrary
-        ? "recommended"
-        : dominantCategoryForPeriods(course, activePeriods);
+      const cat =
+        isOtherLibrary || (isAllLibrary && course.offerings.length === 0)
+          ? "recommended"
+          : dominantCategoryForPeriods(course, activePeriods);
       if (cat) groups.get(cat)!.push(course);
     }
 
@@ -302,6 +316,7 @@ export function BrowsePage({
     auth.isAuthenticated,
     search,
     isOtherLibrary,
+    isAllLibrary,
   ]);
 
   const openAddCourseDialog = () =>
@@ -367,7 +382,7 @@ export function BrowsePage({
                   key={c._id}
                   course={c}
                   programmeCode={programmeCode}
-                  showProgrammeContext={false}
+                  showProgrammeContext={isAllLibrary}
                   periods={grouped.activePeriods}
                   hasSummary={summary !== undefined}
                   summaryPreview={summary?.overview ?? null}
@@ -408,7 +423,7 @@ export function BrowsePage({
                       key={c._id}
                       course={c}
                       programmeCode={programmeCode}
-                      showProgrammeContext={false}
+                      showProgrammeContext={isAllLibrary}
                       periods={grouped.activePeriods}
                       hasSummary={summary !== undefined}
                       summaryPreview={summary?.overview ?? null}
