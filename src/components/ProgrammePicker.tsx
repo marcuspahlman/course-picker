@@ -5,12 +5,18 @@ import { api } from "../../convex/_generated/api";
 import { useAuthContext } from "../lib/authContextValue";
 import { CheckIcon, ChevronDownIcon, MoreVerticalIcon } from "../lib/icons";
 import { cn } from "../lib/cn";
-import { OTHER_LIBRARY_CODE, OTHER_LIBRARY_NAME } from "../lib/course";
+import {
+  ALL_LIBRARY_CODE,
+  ALL_LIBRARY_NAME,
+  OTHER_LIBRARY_CODE,
+  OTHER_LIBRARY_NAME,
+} from "../lib/course";
 
 type Programme = Doc<"programmes">;
 type LibraryItem =
   | { kind: "programme"; programme: Programme }
-  | { kind: "other"; programmeCode: typeof OTHER_LIBRARY_CODE };
+  | { kind: "other"; programmeCode: typeof OTHER_LIBRARY_CODE }
+  | { kind: "all"; programmeCode: typeof ALL_LIBRARY_CODE };
 
 function formatProgrammeName(programmeName: string) {
   return programmeName.replace(/^master(?:['’]s|s)?\s+programme,\s*/i, "");
@@ -31,7 +37,11 @@ function orderLibraryItems(programmes: Programme[]): LibraryItem[] {
     kind: "other",
     programmeCode: OTHER_LIBRARY_CODE,
   };
-  return [...programmeItems, otherItem];
+  const allItem: LibraryItem = {
+    kind: "all",
+    programmeCode: ALL_LIBRARY_CODE,
+  };
+  return [...programmeItems, otherItem, allItem];
 }
 
 type Props = {
@@ -65,11 +75,13 @@ export function ProgrammePicker({
     (programme) => programme.programmeCode === selectedProgrammeCode,
   );
   const selectedProgrammeName =
-    selectedProgrammeCode === OTHER_LIBRARY_CODE
-      ? OTHER_LIBRARY_NAME
-      : selectedProgramme === undefined
-        ? "Course catalogue"
-        : formatProgrammeName(selectedProgramme.programmeName);
+    selectedProgrammeCode === ALL_LIBRARY_CODE
+      ? ALL_LIBRARY_NAME
+      : selectedProgrammeCode === OTHER_LIBRARY_CODE
+        ? OTHER_LIBRARY_NAME
+        : selectedProgramme === undefined
+          ? "Course catalogue"
+          : formatProgrammeName(selectedProgramme.programmeName);
   const savedDefaultCode =
     pendingDefaultCode ??
     (defaultProgrammeCode !== null &&
@@ -81,8 +93,12 @@ export function ProgrammePicker({
   const items: LibraryItem[] =
     programmes && programmes.length > 0
       ? orderLibraryItems(programmes)
-      : selectedProgrammeCode === OTHER_LIBRARY_CODE
-        ? [{ kind: "other", programmeCode: OTHER_LIBRARY_CODE }]
+      : selectedProgrammeCode === OTHER_LIBRARY_CODE ||
+          selectedProgrammeCode === ALL_LIBRARY_CODE
+        ? [
+            { kind: "other", programmeCode: OTHER_LIBRARY_CODE },
+            { kind: "all", programmeCode: ALL_LIBRARY_CODE },
+          ]
         : selectedProgramme === undefined
           ? [
               {
@@ -94,10 +110,12 @@ export function ProgrammePicker({
                 } as Programme,
               },
               { kind: "other", programmeCode: OTHER_LIBRARY_CODE },
+              { kind: "all", programmeCode: ALL_LIBRARY_CODE },
             ]
           : [
               { kind: "programme", programme: selectedProgramme },
               { kind: "other", programmeCode: OTHER_LIBRARY_CODE },
+              { kind: "all", programmeCode: ALL_LIBRARY_CODE },
             ];
 
   useEffect(() => {
@@ -166,10 +184,13 @@ export function ProgrammePicker({
             const programmeCode =
               item.kind === "other"
                 ? item.programmeCode
-                : item.programme.programmeCode;
+                : item.kind === "all"
+                  ? item.programmeCode
+                  : item.programme.programmeCode;
             const selected = programmeCode === selectedProgrammeCode;
-            const isOther = item.kind === "other";
-            const isDefault = !isOther && programmeCode === savedDefaultCode;
+            const isLibraryItem = item.kind === "other" || item.kind === "all";
+            const isDefault =
+              !isLibraryItem && programmeCode === savedDefaultCode;
             const actionOpen =
               actionProgrammeCode === programmeCode && !isDefault;
             const pending =
@@ -211,13 +232,15 @@ export function ProgrammePicker({
                       )}
                     </span>
                     <span className="block truncate text-[12px] text-stone-500 dark:text-stone-400">
-                      {isOther
+                      {item.kind === "other"
                         ? OTHER_LIBRARY_NAME
-                        : formatProgrammeName(item.programme.programmeName)}
+                        : item.kind === "all"
+                          ? ALL_LIBRARY_NAME
+                          : formatProgrammeName(item.programme.programmeName)}
                     </span>
                   </span>
                 </button>
-                {!isDefault && !isOther && (
+                {!isDefault && !isLibraryItem && (
                   <button
                     type="button"
                     aria-label={`Programme actions for ${programmeCode}`}

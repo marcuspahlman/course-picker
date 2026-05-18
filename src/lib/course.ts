@@ -19,6 +19,8 @@ export type StudentSummary = Doc<"courseStudentSummaries"> | null;
 
 export const OTHER_LIBRARY_CODE = "Other";
 export const OTHER_LIBRARY_NAME = "Community added courses";
+export const ALL_LIBRARY_CODE = "All";
+export const ALL_LIBRARY_NAME = "All courses";
 
 export const ALL_PERIODS = ["P1", "P2", "P3", "P4"] as const;
 export type Period = (typeof ALL_PERIODS)[number];
@@ -381,7 +383,9 @@ export function courseRoute(
     ? course.canonicalSlug
     : course.courseCode;
   const programme =
-    programmeCode && programmeCode !== OTHER_LIBRARY_CODE
+    programmeCode &&
+    programmeCode !== OTHER_LIBRARY_CODE &&
+    programmeCode !== ALL_LIBRARY_CODE
       ? `?programme=${encodeURIComponent(programmeCode)}`
       : "";
   return `/course/${encodeURIComponent(identifier)}${programme}`;

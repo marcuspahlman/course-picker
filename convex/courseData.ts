@@ -5,6 +5,7 @@ import type { MutationCtx, QueryCtx } from "./_generated/server";
 import { ensureProfile } from "./profileHelpers";
 
 const COMMUNITY_LIBRARY_CODE = "Other";
+const ALL_LIBRARY_CODE = "All";
 
 function normalizeCourseCode(courseCode: string) {
   return courseCode.replace(/\s+/g, "").trim().toUpperCase();
@@ -142,6 +143,34 @@ export const listProgrammes = query({
 export const listProgrammeCourses = query({
   args: { programmeCode: v.string() },
   handler: async (ctx, args) => {
+    if (args.programmeCode === ALL_LIBRARY_CODE) {
+      const courses = await ctx.db.query("courses").take(1000);
+
+      const rows = await Promise.all(
+        courses.map(async (course) => ({
+          course,
+          programme: null,
+          programmeCourse: null,
+          programmeContexts: await programmeContextsForCourse(ctx, course._id),
+        })),
+      );
+
+      return {
+        programme: null,
+        courses: rows.sort((a, b) => {
+          const aKey =
+            a.course.courseType === "external"
+              ? a.course.courseTitle
+              : a.course.courseCode;
+          const bKey =
+            b.course.courseType === "external"
+              ? b.course.courseTitle
+              : b.course.courseCode;
+          return aKey.localeCompare(bKey);
+        }),
+      };
+    }
+
     if (args.programmeCode === COMMUNITY_LIBRARY_CODE) {
       const courses = await ctx.db
         .query("courses")
