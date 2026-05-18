@@ -339,7 +339,7 @@ export function BrowsePage({
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Filter by course code or title…"
+            placeholder="Search courses..."
             type="search"
             className="h-12 w-full rounded-lg border border-stone-200 bg-white pl-9 pr-3 text-[14px] text-stone-900 outline-none transition-colors placeholder:text-stone-400 focus:border-stone-400 focus:ring-2 focus:ring-stone-200 dark:border-stone-800 dark:bg-stone-900 dark:text-stone-100 dark:placeholder:text-stone-500 dark:focus:border-stone-600 dark:focus:ring-stone-800"
           />
