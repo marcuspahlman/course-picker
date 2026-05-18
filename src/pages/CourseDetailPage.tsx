@@ -7,6 +7,7 @@ import {
   courseRoute,
   displayCourseCode,
   displayCredits,
+  fallbackMetadataFromProgrammeContexts,
   formatCoursePeriods,
   formatCredits,
   formatPeriods,
@@ -315,18 +316,14 @@ function courseWithContext(
   context: CourseProgrammeContext | null,
   programmeContexts: CourseProgrammeContext[],
 ): Course {
-  const fallbackCredits = Math.max(
-    0,
-    ...programmeContexts.flatMap((c) =>
-      c.programmeCourse.offerings.map((offering) => offering.credits),
-    ),
-  );
+  const fallbackMetadata =
+    fallbackMetadataFromProgrammeContexts(programmeContexts);
 
   if (context === null) {
     return {
       ...course,
-      credits:
-        course.credits ?? (fallbackCredits > 0 ? fallbackCredits : undefined),
+      credits: course.credits ?? fallbackMetadata.credits,
+      period: course.period ?? fallbackMetadata.period,
       offerings: [],
       programmeContexts,
     };

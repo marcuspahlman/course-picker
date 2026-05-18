@@ -11,6 +11,7 @@ import {
   ALL_PERIODS,
   creditsForPeriod,
   displayCourseCode,
+  fallbackMetadataFromProgrammeContexts,
   formatCredits,
   totalCredits,
   type Course,
@@ -444,19 +445,13 @@ function courseFromStatus(
     };
   }
 
-  const fallbackCredits = Math.max(
-    0,
-    ...contexts.flatMap((context) =>
-      context.programmeCourse.offerings.map((offering) => offering.credits),
-    ),
-  );
+  const fallbackMetadata = fallbackMetadataFromProgrammeContexts(contexts);
 
   return {
     course: {
       ...item.course,
-      credits:
-        item.course.credits ??
-        (fallbackCredits > 0 ? fallbackCredits : undefined),
+      credits: item.course.credits ?? fallbackMetadata.credits,
+      period: item.course.period ?? fallbackMetadata.period,
       offerings: [],
       programmeContexts: [],
     },

@@ -234,6 +234,32 @@ export function totalCredits(course: Course): number {
   return Math.max(...offerings.map((o) => o.credits));
 }
 
+export function fallbackMetadataFromProgrammeContexts(
+  contexts: CourseProgrammeContext[],
+): { credits?: number; period?: string } {
+  const offerings = contexts.flatMap(
+    (context) => context.programmeCourse.offerings,
+  );
+  const fallbackCredits = Math.max(
+    0,
+    ...offerings.map((offering) => offering.credits),
+  );
+  const periodSet = new Set<Period>();
+
+  for (const offering of offerings) {
+    for (const period of offeringPeriods(offering)) {
+      periodSet.add(period);
+    }
+  }
+
+  const periods = ALL_PERIODS.filter((period) => periodSet.has(period));
+
+  return {
+    ...(fallbackCredits > 0 ? { credits: fallbackCredits } : {}),
+    ...(periods.length > 0 ? { period: formatPeriods(periods) } : {}),
+  };
+}
+
 export function distinctPeriods(course: Course): Period[] {
   const set = new Set<Period>();
   for (const offering of course.offerings) {
